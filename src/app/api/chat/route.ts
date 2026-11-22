@@ -31,7 +31,7 @@ function extractAnswer(responseData: unknown): { answer: string; sources: Citati
   if (!isRecord(responseData)) return { answer: "", sources: [] };
 
   const choices = Array.isArray(responseData.choices) ? responseData.choices : [];
-  const firstChoice = choices[0];
+  const firstChoice = choices;
 
   if (isRecord(firstChoice) && isRecord(firstChoice.message)) {
     const content = firstChoice.message.content;
@@ -47,14 +47,15 @@ function extractAnswer(responseData: unknown): { answer: string; sources: Citati
 }
 
 export function GET() {
+  const key = (process.env.DEEPSEEK_API_KEY || "").trim();
   return Response.json(
-    { configured: Boolean(process.env.DEEPSEEK_API_KEY) },
+    { configured: Boolean(key), keyLength: key.length },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const apiKey = (process.env.DEEPSEEK_API_KEY || "").trim();
   if (!apiKey) {
     return Response.json(
       { error: "FlyAI пока не подключён: добавь DEEPSEEK_API_KEY в серверные переменные окружения." },
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        model: (process.env.DEEPSEEK_MODEL || "deepseek-chat").trim(),
         messages: [
           { role: "system", content: aviationInstructions },
           ...messages,
@@ -107,9 +108,14 @@ export async function POST(request: Request) {
 
     const providerData: unknown = await providerResponse.json().catch(() => null);
     if (!providerResponse.ok) {
+      let details = "";
+      if (isRecord(providerData) && isRecord(providerData.error) && typeof providerData.error.message === "string") {
+        details = ` (${providerData.error.message})`;
+      }
+
       if (providerResponse.status === 401 || providerResponse.status === 403) {
         return Response.json(
-          { error: "DeepSeek не принял API-ключ. Проверь DEEPSEEK_API_KEY в серверных переменных." },
+          { error: `Ошибка ключа (${providerResponse.status})${details}. Длина ключа: ${apiKey.length} симв.` },
           { status: 502 },
         );
       }
@@ -125,14 +131,8 @@ export async function POST(request: Request) {
           { status: 429 },
         );
       }
-      if (providerResponse.status === 400) {
-        return Response.json(
-          { error: "Проверь название модели в DEEPSEEK_MODEL и настройки доступа к DeepSeek API." },
-          { status: 502 },
-        );
-      }
       return Response.json(
-        { error: "Сервис ИИ временно недоступен. Попробуй задать вопрос чуть позже." },
+        { error: `Ошибка DeepSeek (${providerResponse.status})${details}` },
         { status: 503 },
       );
     }
