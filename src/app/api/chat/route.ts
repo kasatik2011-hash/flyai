@@ -87,12 +87,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const providerResponse = await fetch("https://deepseek.com", {
+       const providerResponse = await fetch("https://deepseek.com", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "User-Agent": "FlyAI/1.0",
       },
+
       body: JSON.stringify({
         model: (process.env.DEEPSEEK_MODEL || "deepseek-chat").trim(),
         messages: [
