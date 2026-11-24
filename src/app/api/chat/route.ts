@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const providerResponse = await fetch("https://groq.com", {
+   const providerResponse = await fetch("https://groq.com", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
