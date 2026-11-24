@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   try {
-   const providerResponse = await fetch("https://groq.com", {
+   const providerResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
