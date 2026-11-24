@@ -49,7 +49,7 @@ function extractAnswer(responseData: unknown): { answer: string; sources: Citati
 export function GET() {
   const key = (process.env.DEEPSEEK_API_KEY || "").trim();
   return Response.json(
-    { configured: Boolean(key), keyLength: key.length },
+    { configured: Boolean(key) },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
@@ -87,16 +87,14 @@ export async function POST(request: Request) {
   }
 
   try {
-       const providerResponse = await fetch("https://deepseek.com", {
+    const providerResponse = await fetch("https://groq.com", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "User-Agent": "FlyAI/1.0",
       },
-
       body: JSON.stringify({
-        model: (process.env.DEEPSEEK_MODEL || "deepseek-chat").trim(),
+        model: (process.env.DEEPSEEK_MODEL || "llama-3.3-70b-versatile").trim(),
         messages: [
           { role: "system", content: aviationInstructions },
           ...messages,
@@ -117,24 +115,18 @@ export async function POST(request: Request) {
 
       if (providerResponse.status === 401 || providerResponse.status === 403) {
         return Response.json(
-          { error: `Ошибка ключа (${providerResponse.status})${details}. Длина ключа: ${apiKey.length} симв.` },
+          { error: `Ошибка ключа (${providerResponse.status})${details}` },
           { status: 502 },
-        );
-      }
-      if (providerResponse.status === 402) {
-        return Response.json(
-          { error: "Недостаточно средств на балансе DeepSeek API. Пополни счёт в личном кабинете." },
-          { status: 402 },
         );
       }
       if (providerResponse.status === 429) {
         return Response.json(
-          { error: "Сейчас исчерпан лимит запросов к ИИ. Подожди немного и попробуй снова." },
+          { error: "Бесплатный лимит запросов в минуту временно исчерпан. Подожди немного и попробуй снова." },
           { status: 429 },
         );
       }
       return Response.json(
-        { error: `Ошибка DeepSeek (${providerResponse.status})${details}` },
+        { error: `Ошибка сервиса ИИ (${providerResponse.status})${details}` },
         { status: 503 },
       );
     }
