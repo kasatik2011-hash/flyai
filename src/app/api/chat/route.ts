@@ -94,7 +94,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: (process.env.DEEPSEEK_MODEL || "llama-3.3-70b-versatile").trim(),
+        model: (process.env.DEEPSEEK_MODEL || "openai/gpt-oss-120b").trim(),
         messages: [
           { role: "system", content: aviationInstructions },
           ...messages,
